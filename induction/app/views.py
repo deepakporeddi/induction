@@ -5,9 +5,8 @@ from rest_framework import viewsets
 from .models import *
 from django.core.cache import cache
 from django.http import HttpResponse,JsonResponse
-#from  . import handle_uploaded_file
 from rest_framework.authentication import BasicAuthentication,SessionAuthentication,RemoteUserAuthentication,TokenAuthentication
-from rest_framework.permissions import IsAuthenticated,IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated,IsAuthenticatedOrReadOnly,AllowAny
 from django.views.decorators.csrf import csrf_protect,csrf_exempt
 from rest_framework.generics import *
 from rest_framework.mixins import ListModelMixin,CreateModelMixin,RetrieveModelMixin,UpdateModelMixin
@@ -17,7 +16,8 @@ from time import sleep
 from django.db.models import F, Prefetch
 from django.db import transaction,connection
 from django_seed import seeder
-
+from .filters import *
+from .signals import *
 def home_view(request):
     context={}
     #context['vehicle']=vehicle
@@ -32,6 +32,7 @@ def truck_view(request):
         form.save()
     context['form']=Truckform()
     return render(request,'list.html',context)
+
 def car_view(request):
     context={}
     form=carform(request.POST or None,request.FILES or None)
@@ -43,7 +44,8 @@ def car_view(request):
 
     context['form']=carform()
     return render(request,'list.html',context)
-#----------------CSRF-----------------------------
+
+#----------------CSRF--------------------------------------------------
 @csrf_protect
 def vehicle_view(request):
     context={}
@@ -71,11 +73,11 @@ def payment_view(request):
         z=int(form.cleaned_data['amount'])
         try:
             with transaction.atomic():
-                payer=customer.objects.get(name=x)
                 payer = customer.objects.get(name=x)
                 payer.amount -= z
+                if payer.amount <= 0:
+                    return HttpResponse('Insufficient Funds')
                 payer.save()
-                paid_to = customer.objects.get(name=y)
                 paid_to = customer.objects.get(name=y)
                 paid_to.amount += z
                 paid_to.save()
@@ -88,6 +90,7 @@ class vehcilesinfo(viewsets.ModelViewSet):
     queryset = vehicle.objects.all()
     serializer_class = vehser
     search_fields = ['model_name', 'manufacturer']
+    filterset_class=Vehcilefilter
     #for locally giving authenication
     authentication_classes = [TokenAuthentication,SessionAuthentication]
     permission_classes = [IsAuthenticated]
@@ -102,9 +105,14 @@ class trucksinfo(viewsets.ModelViewSet):
     filter_fields=('wheel_count','max_goods_weight')
 
 class studentsinfo(viewsets.ModelViewSet):
+    http_method_names = ['patch','delete','get']
     queryset=Student.objects.all()
     serializer_class = stuser
-    filter_fields=('id','first_name')
+    filter_fields={
+        'id': ['gte','lte'],
+        'first_name': ['in','startswith']
+    }
+    search_fields=['id','first_name']
 
 class paymentinfo(viewsets.ModelViewSet):
     queryset = customer.objects.all()
@@ -132,8 +140,6 @@ class objcount(viewsets.ModelViewSet):
     queryset = vehicle.objects.all()
     serializer_class = vehser
 
-
-
 def http_call_sync():
     for num in range(1,5):
         sleep(1)
@@ -152,7 +158,6 @@ def file_handler(request):
         # return the path of the file
         # this value will be kept in the JSON data
         return JsonResponse({'value': obj.file.name})
-
 #------------------------------------ORM--------------------------------------------------------------------------------
 #---------------------------------EXERCISES----------------------------------------------------------------------------
 @api_view(['GET'])
@@ -162,6 +167,7 @@ def Scenario2(request):
 
 class Scenario1(RetrieveAPIView,UpdateAPIView):
     serializer_class = stuser
+
 
     def get_queryset(self):
         if self.request.method =='GET':
@@ -173,6 +179,7 @@ class Scenario1(RetrieveAPIView,UpdateAPIView):
             #print(len(connection.queries))
             print(queryset.values('department'))
             return queryset
+
 
 class Scenario5(ListCreateAPIView):
     serializer_class = stuser
@@ -249,13 +256,18 @@ class Scenario11(RetrieveAPIView,UpdateAPIView):
             #http_call_sync()
             return queryset
 
-
-
-
-
-
-
-
-
-
-
+class Scenario10(ListCreateAPIView):
+    def post(self, request,*args,**kwargs):
+        '''lst = self.request.data.get('ids')
+        lst = lst.split(',')'''
+        data = request.POST.get('ids')
+        data = data[1:-1]
+        lst = list(data.split(','))
+        length = len(lst)
+        l1 = lst[:length // 2]
+        l2 = lst[length // 2:]
+        post_delete.disconnect(delete_Student, sender=Student)
+        Student.objects.filter(id__in=l1).delete()
+        post_delete.connect(delete_Student, sender=Student)
+        Student.objects.filter(id__in=l2).delete()
+        return Response(data="Deletion Successful")

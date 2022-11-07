@@ -14,6 +14,6 @@ from django.utils.deprecation import MiddlewareMixin
 
 
 '''class EncryptMiddleware(MiddlewareMixin):
-    def get_rsponse(self,request,response):'''
+    def get_response(self,request,response):'''
 
 

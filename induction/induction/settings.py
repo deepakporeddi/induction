@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     #----REST----
     'rest_framework',
     'rest_framework.authtoken',
+    # open-api
+    'drf_yasg',
     #----django
     'django_filters',
     'django_seed',
@@ -108,7 +110,6 @@ DATABASES = {
         },
     }
 }'''
-
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
@@ -132,7 +133,7 @@ LOGIN_URL = '/login/'
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -159,12 +160,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK={
     'DEFAULT_FILTER_BACKENDS':['django_filters.rest_framework.DjangoFilterBackend','rest_framework.filters.SearchFilter','rest_framework.filters.OrderingFilter'],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination','PAGE_SIZE': 3,
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination','PAGE_SIZE': 4,
 }
-FILE_UPLOAD_HANDLERS=["django.core.files.uploadhandler.MemoryFileUploadHandler",
- "django.core.files.uploadhandler.TemporaryFileUploadHandler"]
 
-DJANGO_JSONFORM = {
-    'FILE_HANDLER': '/json-file-handler/'
-}
 INTERNAL_IPS=['127.0.0.1']
