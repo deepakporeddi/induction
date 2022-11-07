@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     #----REST----
     'rest_framework',
     'rest_framework.authtoken',
-    # open-api
+    #---open-api
     'drf_yasg',
     #----django
     'django_filters',

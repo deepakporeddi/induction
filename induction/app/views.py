@@ -18,14 +18,14 @@ from django.db import transaction,connection
 from django_seed import seeder
 from .filters import *
 from .signals import *
-def home_view(request):
+def home_view(request):      #-------------HOMEPAGE----------------
     context={}
     #context['vehicle']=vehicle
     nums=car.objects.all()
     context['nums'] = nums
     return render(request,'homepage.html',context)
 
-def truck_view(request):
+def truck_view(request):         #-----------TRUCKS FORM-------------
     context={}
     form=Truckform(request.POST or None,request.FILES or None)
     if form.is_valid():
@@ -33,7 +33,7 @@ def truck_view(request):
     context['form']=Truckform()
     return render(request,'list.html',context)
 
-def car_view(request):
+def car_view(request):         #--------------CARS FORM---------------
     context={}
     form=carform(request.POST or None,request.FILES or None)
     if form.is_valid():
@@ -45,7 +45,7 @@ def car_view(request):
     context['form']=carform()
     return render(request,'list.html',context)
 
-#----------------CSRF--------------------------------------------------
+#-------------------------CSRF---------------------------------------
 @csrf_protect
 def vehicle_view(request):
     context={}
@@ -63,6 +63,8 @@ def student_view(request):
         form.save()
     context['form']=studentform()
     return render(request,'list.html',context)
+
+#-------------------TRANSACTIONS FORM-----------------------------------------
 @transaction.atomic
 def payment_view(request):
     context={}
@@ -86,6 +88,7 @@ def payment_view(request):
 
     context['form']=paymentform()
     return render(request,'list.html',context)
+#-------------------------API'S------------------------------------------------------
 class vehcilesinfo(viewsets.ModelViewSet):
     queryset = vehicle.objects.all()
     serializer_class = vehser
@@ -118,7 +121,8 @@ class paymentinfo(viewsets.ModelViewSet):
     queryset = customer.objects.all()
     serializer_class = payser
 
-class trsdemo(ListCreateAPIView):
+class trsdemo(ListCreateAPIView):      #---------trs=TRANSACTION DEMO-------------
+    serializer_class = trsser
     def get(self,request,*args,**kwargs):
         with transaction.atomic():
             all_cust = customer.objects.all()
@@ -131,11 +135,8 @@ class trsdemo(ListCreateAPIView):
                 'veh':veh.data,
             }
         return Response(res)
-'''def myobjects(request,model_name):
-    queryset=vehicle.objects.values().filter(model_name__exact=model_name)
-    serializers=vehser(queryset)
-    return JsonResponse(serializers.data)'''
 
+#---------------SHOWS ALL VEHCILES----------------------------------
 class objcount(viewsets.ModelViewSet):
     queryset = vehicle.objects.all()
     serializer_class = vehser
@@ -149,17 +150,17 @@ def sync_view(request):
     http_call_sync()
     return HttpResponse("Blocking HTTP request")
 
-def file_handler(request):
+'''def file_handler(request):
     if request.method == 'POST':
         file = request.FILES['file']
         obj = car(file=file)
         obj.save()
-
         # return the path of the file
         # this value will be kept in the JSON data
-        return JsonResponse({'value': obj.file.name})
+        return JsonResponse({'value': obj.file.name})'''
+
 #------------------------------------ORM--------------------------------------------------------------------------------
-#---------------------------------EXERCISES----------------------------------------------------------------------------
+#---------------------------------EXERCISES-----------------------------------------------------------------------------
 @api_view(['GET'])
 def Scenario2(request):
     queryset = Student.objects.annotate(new_id=F('id') + 100).values('new_id')
@@ -228,11 +229,11 @@ class Scenario6(ListAPIView):   #------------------Scenario7------------Scenario
         return qs
 
 class Scenario9(ListCreateAPIView,UpdateAPIView):
-    #serializer_class = deptser
+    serializer_class = deptser
 
     def post(self, request, *args, **kwargs):
-        if self.request.method=='POST':
-            id=request.data.get('id',None)
+        if self.request.method == 'POST':
+            id = request.data.get('id',None)
             name=request.data.get('name')
             if id is not None: #-----If id key is defined for each of the JSON objects then assume that there exists a matching entry in the database with that "id"
                 qs=dept.objects.get(id=id)
@@ -240,7 +241,7 @@ class Scenario9(ListCreateAPIView,UpdateAPIView):
                 qs.save()
                 return Response(data="updated object successfully")
             else:
-                qs=dept(id=id,branch=name)
+                qs=dept(id=id, branch=name)
                 qs.save()
                 return Response(data="Created object successfully")
 
@@ -253,7 +254,7 @@ class Scenario11(RetrieveAPIView,UpdateAPIView):
             model_name = self.request.GET.get('model_name', None)
             if model_name is not None:
                 queryset = queryset.filter(model_name__iexact=model_name)
-            #http_call_sync()
+            http_call_sync()       #-------------FOR SLEEP 10 Sec-----------------
             return queryset
 
 class Scenario10(ListCreateAPIView):
